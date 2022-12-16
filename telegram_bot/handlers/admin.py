@@ -37,6 +37,7 @@ async def get_question(message : types.Message, state=FSMContext):
     await message.answer('Ссылка на статью: \n' + question_wiki.url)
     await message.answer('Название статьи: \n' + question_wiki.original_title)
     await message.answer('Статья: \n' + question_wiki.summary + '\nДля того чтобы продолжить введитие /start или /help')
+    await state.finish() #эта тема выходит из машины состояний
     '''
     #url = question_wiki.url
     request = requests.get(question_wiki.url)
