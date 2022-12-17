@@ -1,1 +1,1 @@
-# PoiskovichkOff_wikibot
+bot_run.bat - файл запускающий бота
