@@ -2,15 +2,17 @@ from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram import types, Dispatcher
 from create_bot import dp
+from aiogram.dispatcher.filters import Text
+
 import wikipedia
 from bs4 import BeautifulSoup
 import requests
 
-from keyboards import kboard
+from keyboards import cancel_kboard
+from keyboards import additional_kboard
 from aiogram.types import ReplyKeyboardRemove
 
 
-wikipedia.set_lang('ru')
 '''
 a = str(input())
 b = wikipedia.page(a)
@@ -21,23 +23,125 @@ print(b.summary)
 
 class FSMRequest(StatesGroup):
     question = State()
-    #additional_question = State()
+    additional_question_request = State()
+    additional_question = State()
+
 
 #@dp.message_handler(commands='Запрос', state=None)
 async def cm_start(message : types.Message):
     await FSMRequest.question.set()
-    await message.answer('Введите запрос')
+    await message.answer('Введите запрос\nДля того чтобы отменить запрос напишите отмена или воспользуйтесь коммандой /Отмена', reply_markup=cancel_kboard)
+
+
+#выход из машины состояний
+async def cancel_command(message : types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+    await state.finish()
+    await message.answer('Запрос отменен\nЧтобы продолжить введите /start или /help')
+
 
 #@dp.message_handler(state=FSMRequest.question)
-async def get_question(message : types.Message, state=FSMContext):
+async def get_question(message : types.Message, state: FSMContext):
+    def match(text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
+        return not alphabet.isdisjoint(text.lower())
+    seearch = match(message.text)
+    if seearch == True:
+        wikipedia.set_lang('ru')
+        async with state.proxy() as data:
+            data['question'] = message.text
+        await FSMRequest.next()  # перевод на следующее состояние
+        await message.answer('Вот что нашлось по вашему запросу ' + str(data['question']) + ':', reply_markup=ReplyKeyboardRemove())  # , reply_markup=ReplyKeyboardRemove()
+        question_wiki = wikipedia.page(str(data['question']))
+        await message.answer('Ссылка на статью: \n' + question_wiki.url)
+        await message.answer('Название статьи: \n' + question_wiki.original_title)
+        await message.answer('Статья: \n' + question_wiki.summary + '\nДля того чтобы узнать дополнительную информацию введите\n/Дополнительная информация, а чтобы вернуться к главному меню /Отмена', reply_markup=additional_kboard)
+        #await state.finish()  # эта тема выходит из машины состояний
+    elif seearch == False:
+        wikipedia.set_lang('en')
+        async with state.proxy() as data:
+            data['question'] = message.text
+        await FSMRequest.next()  # перевод на следующее состояние
+        await message.answer('Вот что нашлось по вашему запросу ' + str(data['question']) + ':', reply_markup=ReplyKeyboardRemove())  # , reply_markup=ReplyKeyboardRemove()
+        question_wiki = wikipedia.page(str(data['question']))
+        await message.answer('Ссылка на статью: \n' + question_wiki.url)
+        await message.answer('Название статьи: \n' + question_wiki.original_title)
+        await message.answer('Статья: \n' + question_wiki.summary + '\nДля того чтобы узнать дополнительную информацию введите\n/Дополнительная информация, а чтобы вернуться к главному меню /Отмена', reply_markup=additional_kboard)
+    #await message.answer('Введите название подстатьи1')
+        #await state.finish()  # эта тема выходит из машины состояний
+    #await state.finish()
+
+
+#@dp.message_handler(state=FSMRequest.additional_question_request)
+async def request_additional_questions(message : types.Message, state: FSMContext):
+    def match(text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
+        return not alphabet.isdisjoint(text.lower())
+    async with state.proxy() as data:
+        seearch = match(str(data['question']))
+        question_wiki = wikipedia.page(str(data['question']))
+
+    if seearch == True:
+        name = question_wiki.original_title  # question_wiki.ORIGINAL_TITLE
+    link = "https://ru.wikipedia.org/wiki/"
+    namet = match(name)
+    if namet == True:
+        link = requests.get(link, params=name)
+        link = str(link.url).replace("?", "")
+        link = link.replace("&", "")
+        link = link + "#"
+    else:
+        link = link + name.replace(" ", "_")
+    soup = BeautifulSoup(question_wiki.html(), "html.parser")
+    links = soup.find("div", {"id": "toc"}).find("ul").find_all("a")
+    for i in links:
+        url = i.get("href")
+        await message.answer(url[1:])
+        urlt = match(url)
+        if urlt == True:
+            rec = requests.get(link, params=url)
+            #await message.answer(rec.url) ######можно сделать гиперссылкой
+        if urlt == False:
+            recc = link + url
+            #await message.answer(recc) ######можно сделать гиперссылкой
+
+
+    if seearch == False:
+        name = question_wiki.original_title  # question_wiki.ORIGINAL_TITLE
+        link = "https://en.wikipedia.org/wiki/"
+        link = link + name.replace(" ", "_")
+        soup = BeautifulSoup(question_wiki.html(), "html.parser")
+        links = soup.find("div", {"id": "toc"}).find("ul").find_all("a")
+        for i in links:
+            url = i.get("href")
+            await message.answer(url[1:])
+            recc = link + url
+            #await message.answer(recc) ######можно сделать гиперссылкой
+    await message.answer('Введите название подстатьи которую хотите прочитать, если вы передумали нажмите /Отмена', reply_markup=cancel_kboard)
+    await FSMRequest.next()
+
+
+#@dp.message_handler(state=FSMRequest.additional_question)
+async def get_additional_question(message : types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['request_additional_questions'] = message.text
+    await message.answer('Подстатья ' + str(data['request_additional_questions']) + ':')
+    
+    await message.answer('Если вы хотите прочитать еще одну подстатью введите ее название, если вы хотите выйти из запроса введите /Отмена')
+    #await message.answer('Введите название подстатьи')
+    #await state.finish()  # можно убрать чтобы пользователь мог прочесть несколько подстатей подряд, а выход был доступен только с помощью /Отмена
+
+
+    '''
     async with state.proxy() as data:
         data['question'] = message.text
-    await message.answer('Вот что нашлось по вашему запросу ' + str(data['question']) + ':') #, reply_markup=ReplyKeyboardRemove()
+    await message.answer('Вот что нашлось по вашему запросу ' + str(data['question']) + ':', reply_markup=ReplyKeyboardRemove()) #, reply_markup=ReplyKeyboardRemove()
     question_wiki = wikipedia.page(str(data['question']))
     await message.answer('Ссылка на статью: \n' + question_wiki.url)
     await message.answer('Название статьи: \n' + question_wiki.original_title)
     await message.answer('Статья: \n' + question_wiki.summary + '\nДля того чтобы продолжить введитие /start или /help')
-    await state.finish() #эта тема выходит из машины состояний
+    await state.finish()  # эта тема выходит из машины состояний
+    '''
     '''
     #url = question_wiki.url
     request = requests.get(question_wiki.url)
@@ -49,6 +153,10 @@ async def get_question(message : types.Message, state=FSMContext):
     #здесь собственно будет обрабатываться запрос и затем выдаваться в следующей строке
     await state.finish() #эта тема выходит из машины состояний
     '''
+
+#@dp.message_handler(state="*", commands=['Отмена', 'отмена'])
+#@dp.message_handler(Text(equals='отмена', ignore_case=True), state="*")
+
 ##@dp.message_handler()
 #async def get_add_questions(message : types.Message, state=FSMContext):
 
@@ -57,4 +165,10 @@ async def get_question(message : types.Message, state=FSMContext):
 
 def register_handlers_admin(dp : Dispatcher):
     dp.register_message_handler(cm_start, commands=['Запрос'], state=None)
+    dp.register_message_handler(cancel_command, state="*", commands=['Отмена'])
+    dp.register_message_handler(cancel_command, Text(equals=['отмена', 'Отмена'], ignore_case=True), state="*")
     dp.register_message_handler(get_question, state=FSMRequest.question)
+    dp.register_message_handler(request_additional_questions, state=FSMRequest.additional_question_request) #, commands=['/дополнительная_информация']
+    dp.register_message_handler(get_additional_question, state=FSMRequest.additional_question)
+
+#сделать отмену кнопкой
