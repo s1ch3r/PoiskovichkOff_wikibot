@@ -1,7 +1,6 @@
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
 from aiogram import types, Dispatcher
-#from create_bot import dp
 from aiogram.dispatcher.filters import Text
 
 import wikipedia
@@ -14,15 +13,6 @@ from aiogram.types import ReplyKeyboardRemove
 
 from selenium import webdriver
 
-
-
-'''
-a = str(input())
-b = wikipedia.page(a)
-print(b.url)
-print(b.original_title)
-print(b.summary)
-'''
 
 class FSMRequest(StatesGroup):
     question = State()
@@ -60,7 +50,6 @@ async def get_question(message : types.Message, state: FSMContext):
         await message.answer('Ссылка на статью: \n' + question_wiki.url)
         await message.answer('Название статьи: \n' + question_wiki.original_title)
         await message.answer('Статья: \n' + question_wiki.summary + '\nДля того чтобы узнать дополнительную информацию введите\n/Дополнительная информация, а чтобы вернуться к главному меню /Отмена', reply_markup=additional_kboard)
-        #await state.finish()  # эта тема выходит из машины состояний
     elif seearch == False:
         wikipedia.set_lang('en')
         async with state.proxy() as data:
@@ -71,9 +60,6 @@ async def get_question(message : types.Message, state: FSMContext):
         await message.answer('Ссылка на статью: \n' + question_wiki.url)
         await message.answer('Название статьи: \n' + question_wiki.original_title)
         await message.answer('Статья: \n' + question_wiki.summary + '\nДля того чтобы узнать дополнительную информацию введите\n/Дополнительная информация, а чтобы вернуться к главному меню /Отмена', reply_markup=additional_kboard)
-    #await message.answer('Введите название подстатьи1')
-        #await state.finish()  # эта тема выходит из машины состояний
-    #await state.finish()
 
 
 #@dp.message_handler(state=FSMRequest.additional_question_request)
@@ -85,7 +71,7 @@ async def request_additional_questions(message : types.Message, state: FSMContex
         question_wiki = wikipedia.page(str(data['question']))
 
     if seearch == True:
-        name = question_wiki.original_title  # question_wiki.ORIGINAL_TITLEs
+        name = question_wiki.original_title
         link = "https://ru.wikipedia.org/wiki/"
         namet = match(name)
         if namet == True:
@@ -100,17 +86,8 @@ async def request_additional_questions(message : types.Message, state: FSMContex
         for i in links:
             url = i.get("href")
             await message.answer(url)
-            #urlt = match(url)
-            #if urlt == True:
-                #rec = requests.get(link, params=url)
-                ##await message.answer(rec.url) ######можно сделать гиперссылкой
-            #if urlt == False:
-                #recc = link + url
-                ##await message.answer(recc) ######можно сделать гиперссылкой
-
-
     if seearch == False:
-        name = question_wiki.original_title  # question_wiki.ORIGINAL_TITLE
+        name = question_wiki.original_title
         link = "https://en.wikipedia.org/wiki/"
         link = link + name.replace(" ", "_")
         soup = BeautifulSoup(question_wiki.html(), "html.parser")
@@ -118,7 +95,6 @@ async def request_additional_questions(message : types.Message, state: FSMContex
         for i in links:
             url = i.get("href")
             await message.answer(url)
-            #await message.answer(recc) ######можно сделать гиперссылкой
     await message.answer('Введите название подстатьи которую хотите прочитать, если вы передумали нажмите /Отмена', reply_markup=cancel_kboard)
     await FSMRequest.next()
 
@@ -131,8 +107,6 @@ async def get_additional_question(message : types.Message, state: FSMContext):
     def match(text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
         return not alphabet.isdisjoint(text.lower())
     answer = message.text
-    #async with state.proxy() as data:
-    #    data['request_additional_questions'] = message.text
     await message.answer('Подстатья ' + str(answer) + ':')
     manswer = match(answer)
     if manswer == True:
@@ -167,7 +141,7 @@ async def get_additional_question(message : types.Message, state: FSMContext):
                 photo = open("scrn.png", 'rb')
                 await message.answer_photo(photo=photo)
                 rurl = rec.url
-                await message.answer('Ссылка на статью:' + rurl) #, parse_mode="HTML"
+                await message.answer('Ссылка на статью:' + rurl)
     if manswer == False:
         wikipedia.set_lang('en')
         name = question_wiki.original_title
@@ -192,40 +166,8 @@ async def get_additional_question(message : types.Message, state: FSMContext):
                 await message.answer_photo(photo=photo)
                 await message.answer('Ссылка на статью:' + recc)
     await message.answer('Если вы хотите прочитать еще одну подстатью введите ее название, если вы хотите выйти из запроса введите /Отмена')
-    #await message.answer('Введите название подстатьи')
-    #await state.finish()  # можно убрать чтобы пользователь мог прочесть несколько подстатей подряд, а выход был доступен только с помощью /Отмена
 
-
-    '''
-    async with state.proxy() as data:
-        data['question'] = message.text
-    await message.answer('Вот что нашлось по вашему запросу ' + str(data['question']) + ':', reply_markup=ReplyKeyboardRemove()) #, reply_markup=ReplyKeyboardRemove()
-    question_wiki = wikipedia.page(str(data['question']))
-    await message.answer('Ссылка на статью: \n' + question_wiki.url)
-    await message.answer('Название статьи: \n' + question_wiki.original_title)
-    await message.answer('Статья: \n' + question_wiki.summary + '\nДля того чтобы продолжить введитие /start или /help')
-    await state.finish()  # эта тема выходит из машины состояний
-    '''
-    '''
-    #url = question_wiki.url
-    request = requests.get(question_wiki.url)
-    soup = BeautifulSoup(request.text, 'html.parser')
-    links = soup.find_all('div', class_= 'toctitle')
-    url = question_wiki.url + links[0].find('a')['href']
-    await message.answer("что-то",url )
-    #await message.answer('Представь что тут статья из вики')
-    #здесь собственно будет обрабатываться запрос и затем выдаваться в следующей строке
-    await state.finish() #эта тема выходит из машины состояний
-    '''
-
-#@dp.message_handler(state="*", commands=['Отмена', 'отмена'])
-#@dp.message_handler(Text(equals='отмена', ignore_case=True), state="*")
-
-##@dp.message_handler()
-#async def get_add_questions(message : types.Message, state=FSMContext):
-
-
-
+    
 
 def register_handlers_wikipedia_request(dp : Dispatcher):
     dp.register_message_handler(cm_start, commands=['Запрос'], state=None)
