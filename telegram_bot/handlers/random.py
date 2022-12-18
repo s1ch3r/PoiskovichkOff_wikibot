@@ -26,8 +26,17 @@ async def random_command(message : types.Message, state: FSMContext):
     title = soup.find(class_="firstHeading").text
     async with state.proxy() as data:
         data['answer'] = title
-    await FSMRandom.next() 
+    await FSMRandom.next()
     await message.answer(f"{title} \nВы хотите прочитать данную статью?", reply_markup=yesno_kboard)
+
+
+#выход из машины состояний
+async def cancel_random_command(message : types.Message, state: FSMContext):
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+    await state.finish()
+    await message.answer('Запрос отменен\nЧтобы продолжить введите /start или /help')
 
 
 #@dp.message_handler(commands=['Да', 'Нет']) ###возможно нет надо отдельно
@@ -46,8 +55,10 @@ async def confirmation_command(message : types.Message, state: FSMContext):
         await state.finish()
 
 
-
 def register_handlers_random(dp : Dispatcher):
     dp.register_message_handler(random_command, commands=['Случайная_статья', 'Рандомная_статья'])
-    dp.register_message_handler(confirmation_command, state=FSMRandom.confirmation, commands=['Да', 'Нет'])
-    dp.register_message_handler(confirmation_command, Text(equals=['Да', 'да', 'Нет', 'нет'], ignore_case=True), state=FSMRandom.confirmation)
+    dp.register_message_handler(cancel_random_command, state="*", commands=['Нет'])
+    dp.register_message_handler(cancel_random_command, Text(equals=['нет', 'Нет'], ignore_case=True), state="*")
+    dp.register_message_handler(confirmation_command, state=FSMRandom.confirmation, commands=['Да'])
+    dp.register_message_handler(confirmation_command, Text(equals=['Да', 'да'], ignore_case=True), state=FSMRandom.confirmation)
+
