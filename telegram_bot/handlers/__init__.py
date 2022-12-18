@@ -1,3 +1,4 @@
-from handlers import client
-from handlers import admin
-from handlers import other
+from handlers import usual
+from handlers import wikipedia_request
+from handlers import random
+from handlers import non_commands
