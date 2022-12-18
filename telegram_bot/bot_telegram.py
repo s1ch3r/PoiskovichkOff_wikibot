@@ -7,13 +7,11 @@ from create_bot import dp
 async def on_startup(_):
     print('Бот успешно запущен. Скоро здесь будет служебная информация о боте. \nК примеру список его возможностей или источники из которых он берет информицию хз не придумал до конца ещё')
 
-from handlers import client, admin, other
-client.register_handlers_client(dp)
-admin.register_handlers_admin(dp)
-other.register_handlers_other(dp)
+from handlers import usual, wikipedia_request, random, non_commands
+usual.register_handlers_usual(dp)
+wikipedia_request.register_handlers_wikipedia_request(dp)
+random.register_handlers_random(dp)
+non_commands.register_handlers_non_commands(dp)
 
 
-executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
-
-#переименовать client в usual_commands(usual), other в non_command_messages(non_commands), admin в wiki_request_command(wikipedia_request)
-#инлайн клавиатура в доп вопросе??? мб тогда доп вопрос вне машины состяний, главное запоминать последний запрос пользователя
+executor.start_polling(dp, skip_updates=True, on_startup=on_startup
