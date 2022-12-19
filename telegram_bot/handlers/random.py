@@ -28,13 +28,17 @@ async def random_command(message : types.Message, state: FSMContext):
     """
     await FSMRandom.answer.set()
     await message.answer('Бим бим, бам бам, бом бом. Здесь скоро будет рандом!', reply_markup=ReplyKeyboardRemove())
+    ####Начало заимствования####
     url = requests.get("https://ru.wikipedia.org/wiki/Special:Random")
     soup = BeautifulSoup(url.content, "html.parser")
     title = soup.find(class_="firstHeading").text
+    ####Конец заимствования####
     async with state.proxy() as data:
         data['answer'] = title
     await FSMRandom.next()  # перевод на следующее состояние
+    ####Начало заимствования####
     await message.answer(f"{title} \nВы хотите прочитать данную статью?", reply_markup=yesno_kboard)
+    ####Конец заимствования####
 
 
 #выход из машины состояний
