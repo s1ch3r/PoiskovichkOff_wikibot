@@ -1,4 +1,6 @@
 Необходимо виртуальное окружение в папке проекта: python -m venv venv
 Также использована сторонняя библиотека aiogram, которую необходимо установить при включенном виртуальном окружении(venv\Scripts\activate) с помощью: pip install aiogram
 Библиотека BeautifulSoup4 (pip install BeautifulSoup4)
-библиотека celenium (pip install celenium)
+Библиотека celenium (pip install celenium)
+Библиотека wikipedia (pip install wikipedia)
+Библиотека requests (pip install requests)
