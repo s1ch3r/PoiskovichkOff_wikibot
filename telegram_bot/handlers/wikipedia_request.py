@@ -19,6 +19,18 @@ class FSMRequest(StatesGroup):
     question = State()
     additional_question_request = State()
     additional_question = State()
+    
+    
+def match(text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
+    """
+    Объявляем функцию 'match', которая сравнивае вводимое значение и если оно совпадает с переменной 'aphabet'(Русский алфавит) -
+    то оно выдаёт 'bool' значение 'True', в противном случае 'False'. Это нужно для проверки языка, на которм пользователь хочет найти информацию.
+    :param text: текст исходного сообщения, отправленного пользователем боту в телеграмм
+    :param alphabet: множество состоящее из букв русского алфавит
+    :return: возвращает буллевое значение True, если исходное сообщение содержит буквы русского алфавита и False,
+    если сообщение не содержит букв русского алфавита
+    """
+    return not alphabet.isdisjoint(text.lower())
 
 
 # @dp.message_handler(commands='Запрос', state=None)
@@ -51,16 +63,6 @@ async def get_question(message: types.Message, state: FSMContext):
     :return: взвращает пользователю 4 сообщения в телеграмм, в которых указывается поисковой запрос пользователя, ссылка на статью,
     заголовок статьи, краткое содержание и предложение посмотреть дополнительную информацию.
     '''
-    def match(text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
-        """
-        Объявляем функцию 'match', которая сравнивае вводимое значение и если оно совпадает с переменной 'aphabet'(Русский алфавит) -
-        то оно выдаёт 'bool' значение 'True', в противном случае 'False'. Это нужно для проверки языка, на которм пользователь хочет найти информацию.
-        :param text: текст исходного сообщения, отправленного пользователем боту в телеграмм
-        :param alphabet: множество состоящее из букв русского алфавита
-        :return: возвращает буллевое значение True, если исходное сообщение содержит буквы русского алфавита и False,
-        если сообщение не содержит букв русского алфавита 
-        """
-        return not alphabet.isdisjoint(text.lower())
     seearch = match(message.text)
 
     if seearch == True:
@@ -104,12 +106,6 @@ async def request_additional_questions(message: types.Message, state: FSMContext
     :param state: FSMContext состояние, взятое из машины состояний, в котором находиться эта функция
     :return: отправляет пользователю сообщениями в телеграмм список подстатей, запрошенной функцей get_question, статьи из википедии и запрос на название подстатьи
     '''
-    def match(text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
-        return not alphabet.isdisjoint(text.lower())
-    """
-    Объявляем функцию 'match', которая сравнивае вводимое значение и если оно совпадает с переменной 'aphabet'(Русский алфавит) - 
-    то оно выдаёт 'bool' значение 'True', в противном случае 'False'. Это нужно для проверки языка, на которм пользователь хочет найти информацию.
-    """
     async with state.proxy() as data:
         seearch = match(str(data['question']))
         question_wiki = wikipedia.page(str(data['question']))
@@ -165,13 +161,6 @@ async def get_additional_question(message: types.Message, state: FSMContext):
     '''
     async with state.proxy() as data:
         question_wiki = wikipedia.page(str(data['question']))
-
-    def match(text, alphabet=set('абвгдеёжзийклмнопрстуфхцчшщъыьэюя')):
-        return not alphabet.isdisjoint(text.lower())
-    """
-    Объявляем функцию 'match', которая сравнивае вводимое значение и если оно совпадает с переменной 'aphabet'(Русский алфавит) - 
-    то оно выдаёт 'bool' значение 'True', в противном случае 'False'. Это нужно для проверки языка, на которм пользователь хочет найти информацию.
-    """
     answer = message.text
     await message.answer('Подстатья ' + str(answer) + ':')
     manswer = match(answer)
