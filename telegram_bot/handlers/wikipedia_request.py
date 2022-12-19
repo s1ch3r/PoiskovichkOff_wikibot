@@ -43,6 +43,12 @@ async def cm_start(message: types.Message):
 
 # выход из машины состояний
 async def cancel_command(message: types.Message, state: FSMContext):
+     """
+    Функция отменяет запрос пользователя
+    :param message: это сообщение получаемое от пользователя
+    :param state: это сообщение получаемое от пользователя
+    :return: Выводит пользователя из машины состояний и отправляет ему в телеграмм ботом сообщение об отмене запроса
+    """
     current_state = await state.get_state()
     if current_state is None:
         return
